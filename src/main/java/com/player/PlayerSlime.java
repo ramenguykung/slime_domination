@@ -11,7 +11,7 @@ public class PlayerSlime extends Player {
         setHealth(100);
         this.maxHealth = 100;
         setDamege(10);
-        setAttackSpeed(1.0);
+        setAttackSpeed(1.1);
         this.skillPoints = 0;
         this.roundsWon = 0;
     }

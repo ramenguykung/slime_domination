@@ -15,10 +15,16 @@ public class GamePanel extends JPanel {
     private BufferedImage playerIdleImage;
     private BufferedImage enemyIdleImage;
     
-    private Timer battleTimer;
     private boolean battleInProgress;
     private String battleLog;
     private int animationFrame;
+    
+    // Thread-related fields
+    private Thread playerAttackThread;
+    private Thread enemyAttackThread;
+    private final Object battleLock = new Object();
+    private volatile boolean playerAnimating = false;
+    private volatile boolean enemyAnimating = false;
     
     public GamePanel(Main mainFrame, PlayerSlime player) {
         this.mainFrame = mainFrame;
@@ -59,59 +65,127 @@ public class GamePanel extends JPanel {
         battleInProgress = true;
         battleLog = "Battle Started!";
         
-        // Battle timer - automatic turn-based combat
-        battleTimer = new Timer(1500, e -> executeTurn());
-        battleTimer.start();
+        // Start separate attack threads for player and enemy
+        startPlayerAttackThread();
+        startEnemyAttackThread();
     }
     
-    private void executeTurn() {
-        if (!battleInProgress) {
-            battleTimer.stop();
-            return;
-        }
-        
-        // Determine who attacks first based on attack speed
-        boolean playerFirst = player.getAttackSpeed() >= enemy.getAttackSpeed();
-        
-        if (playerFirst) {
-            playerAttack();
-            if (enemy.isAlive()) {
-                enemyAttack();
+    private void startPlayerAttackThread() {
+        playerAttackThread = new Thread(() -> {
+            try {
+                // Calculate attack interval based on attack speed
+                // Higher attack speed = faster attacks
+                long attackInterval = (long) (1000 / player.getAttackSpeed());
+                
+                while (battleInProgress && player.isAlive() && enemy.isAlive()) {
+                    Thread.sleep(attackInterval);
+                    
+                    if (battleInProgress && enemy.isAlive()) {
+                        synchronized (battleLock) {
+                            playerAttack();
+                        }
+                        
+                        // Check if battle ended
+                        if (!enemy.isAlive()) {
+                            SwingUtilities.invokeLater(() -> endBattle(true));
+                            break;
+                        }
+                    }
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
-        } else {
-            enemyAttack();
-            if (player.isAlive()) {
-                playerAttack();
+        });
+        playerAttackThread.setDaemon(true);
+        playerAttackThread.start();
+    }
+    
+    private void startEnemyAttackThread() {
+        enemyAttackThread = new Thread(() -> {
+            try {
+                // Calculate attack interval based on attack speed
+                // Higher attack speed = faster attacks
+                long attackInterval = (long) (1000 / enemy.getAttackSpeed());
+                
+                while (battleInProgress && player.isAlive() && enemy.isAlive()) {
+                    Thread.sleep(attackInterval);
+                    
+                    if (battleInProgress && player.isAlive()) {
+                        synchronized (battleLock) {
+                            enemyAttack();
+                        }
+                        
+                        // Check if battle ended
+                        if (!player.isAlive()) {
+                            SwingUtilities.invokeLater(() -> endBattle(false));
+                            break;
+                        }
+                    }
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
-        }
-        
-        // Check battle end conditions
-        if (!player.isAlive()) {
-            endBattle(false);
-        } else if (!enemy.isAlive()) {
-            endBattle(true);
-        }
-        
-        repaint();
+        });
+        enemyAttackThread.setDaemon(true);
+        enemyAttackThread.start();
     }
     
     private void playerAttack() {
+        if (!battleInProgress || !enemy.isAlive()) return;
+        
         double damage = player.getDamege();
         enemy.takeDamage(damage);
         battleLog = "Player attacks for " + (int)damage + " damage!";
+        
+        playerAnimating = true;
         animationFrame++;
+        
+        SwingUtilities.invokeLater(() -> {
+            repaint();
+            // Reset animation flag after a short delay
+            Timer animTimer = new Timer(300, e -> {
+                playerAnimating = false;
+                ((Timer)e.getSource()).stop();
+            });
+            animTimer.setRepeats(false);
+            animTimer.start();
+        });
     }
     
     private void enemyAttack() {
+        if (!battleInProgress || !player.isAlive()) return;
+        
         double damage = enemy.getDamege();
         player.takeDamage(damage);
         battleLog = "Enemy attacks for " + (int)damage + " damage!";
+        
+        enemyAnimating = true;
         animationFrame++;
+        
+        SwingUtilities.invokeLater(() -> {
+            repaint();
+            // Reset animation flag after a short delay
+            Timer animTimer = new Timer(300, e -> {
+                enemyAnimating = false;
+                ((Timer)e.getSource()).stop();
+            });
+            animTimer.setRepeats(false);
+            animTimer.start();
+        });
     }
     
     private void endBattle(boolean playerWon) {
+        if (!battleInProgress) return; // Prevent multiple calls
+        
         battleInProgress = false;
-        battleTimer.stop();
+        
+        // Stop attack threads
+        if (playerAttackThread != null && playerAttackThread.isAlive()) {
+            playerAttackThread.interrupt();
+        }
+        if (enemyAttackThread != null && enemyAttackThread.isAlive()) {
+            enemyAttackThread.interrupt();
+        }
         
         if (playerWon) {
             player.incrementRoundsWon();
@@ -122,10 +196,19 @@ public class GamePanel extends JPanel {
             // Show victory dialog
             Timer delayTimer = new Timer(2000, e -> {
                 ((Timer)e.getSource()).stop();
+                
+                // Calculate next enemy stats
+                int nextLevel = player.getRoundsWon() + 1;
+                int nextEnemyHP = 80 + (nextLevel * 15);
+                int nextEnemyATK = (int)(8.0 + (nextLevel * 2));
+                double nextEnemySpeed = 1.0 + (nextLevel * 0.1);
+                
                 int choice = JOptionPane.showConfirmDialog(this, 
                     "You won! Earned " + skillPointsEarned + " skill points!\n" +
                     "Rounds Won: " + player.getRoundsWon() + "\n" +
                     "Total Skill Points: " + player.getSkillPoints() + "\n\n" +
+                    "Next Enemy Stats:\n" +
+                    "HP: " + nextEnemyHP + " | ATK: " + nextEnemyATK + " | SPD: " + String.format("%.1f", nextEnemySpeed) + "\n\n" +
                     "Continue to next round?",
                     "Victory!", 
                     JOptionPane.YES_NO_OPTION);
@@ -133,6 +216,8 @@ public class GamePanel extends JPanel {
                 if (choice == JOptionPane.YES_OPTION) {
                     nextRound();
                 } else {
+                    // Reset player HP even when declining to continue
+                    player.resetForNewRound();
                     returnToMenu();
                 }
             });
@@ -144,13 +229,24 @@ public class GamePanel extends JPanel {
             // Show defeat dialog
             Timer delayTimer = new Timer(2000, e -> {
                 ((Timer)e.getSource()).stop();
-                JOptionPane.showMessageDialog(this,
+                
+                int choice = JOptionPane.showConfirmDialog(this,
                     "You were defeated!\n" +
                     "Rounds Won: " + player.getRoundsWon() + "\n" +
-                    "Total Skill Points: " + player.getSkillPoints(),
+                    "Total Skill Points: " + player.getSkillPoints() + "\n\n" +
+                    "Reset HP and try again?",
                     "Game Over",
-                    JOptionPane.INFORMATION_MESSAGE);
-                returnToMenu();
+                    JOptionPane.YES_NO_OPTION);
+                
+                // Always reset HP after defeat
+                player.resetForNewRound();
+                
+                if (choice == JOptionPane.YES_OPTION) {
+                    // Retry the same round
+                    retryRound();
+                } else {
+                    returnToMenu();
+                }
             });
             delayTimer.setRepeats(false);
             delayTimer.start();
@@ -158,17 +254,41 @@ public class GamePanel extends JPanel {
     }
     
     private void nextRound() {
+        // Reset player HP to full for the new round
         player.resetForNewRound();
+        
+        // Create a stronger enemy for the next round (HP, damage, and speed all increase)
         enemy = new EnemySlime(player.getRoundsWon() + 1);
+        
         battleLog = "Round " + (player.getRoundsWon() + 1) + " - Fight!";
         startBattle();
         repaint();
     }
     
+    private void retryRound() {
+        // Player HP already reset in endBattle
+        // Create same level enemy (retry current round)
+        enemy = new EnemySlime(player.getRoundsWon() + 1);
+        
+        battleLog = "Round " + (player.getRoundsWon() + 1) + " - Retry!";
+        startBattle();
+        repaint();
+    }
+    
     private void returnToMenu() {
-        if (battleTimer != null) {
-            battleTimer.stop();
+        battleInProgress = false;
+        
+        // Interrupt attack threads
+        if (playerAttackThread != null && playerAttackThread.isAlive()) {
+            playerAttackThread.interrupt();
         }
+        if (enemyAttackThread != null && enemyAttackThread.isAlive()) {
+            enemyAttackThread.interrupt();
+        }
+        
+        // Reset player HP when returning to menu (in case battle was interrupted)
+        player.resetForNewRound();
+        
         mainFrame.showPanel("MENU");
     }
     
@@ -205,7 +325,7 @@ public class GamePanel extends JPanel {
         g2d.setColor(Color.WHITE);
         g2d.setFont(new Font("Arial", Font.BOLD, 18));
         g2d.drawString("Player HP: " + player.getHealth() + "/" + player.getMaxHealth(), playerX + 50, playerY - 60);
-        g2d.drawString("ATK: " + (int)player.getDamege(), playerX + 50, playerY + slimeSize + 30);
+        g2d.drawString("ATK: " + (int)player.getDamege() + " | SPD: " + String.format("%.1f", player.getAttackSpeed()), playerX + 50, playerY + slimeSize + 30);
         
         // Draw enemy slime (right side)
         int enemyX = 1050;
@@ -226,7 +346,7 @@ public class GamePanel extends JPanel {
         g2d.setColor(Color.WHITE);
         g2d.setFont(new Font("Arial", Font.BOLD, 18));
         g2d.drawString("Enemy HP: " + enemy.getHealth() + "/" + enemy.getMaxHealth(), enemyX + 50, enemyY - 60);
-        g2d.drawString("ATK: " + (int)enemy.getDamege() + " | LVL: " + enemy.getLevel(), enemyX + 50, enemyY + slimeSize + 30);
+        g2d.drawString("ATK: " + (int)enemy.getDamege() + " | SPD: " + String.format("%.1f", enemy.getAttackSpeed()) + " | LVL: " + enemy.getLevel(), enemyX + 50, enemyY + slimeSize + 30);
         
         // Draw battle log
         g2d.setColor(new Color(0, 0, 0, 180));
@@ -243,10 +363,16 @@ public class GamePanel extends JPanel {
         g2d.drawString("Skill Points: " + player.getSkillPoints(), 800 - fm.stringWidth("Skill Points: " + player.getSkillPoints()) / 2, 180);
         
         // Draw attack animation (simple slash effect)
-        if (animationFrame % 2 == 1 && battleInProgress) {
-            g2d.setColor(new Color(255, 255, 255, 150));
-            g2d.setStroke(new BasicStroke(8));
-            g2d.drawArc(600, 450, 400, 200, 30, 120);
+        if (playerAnimating) {
+            g2d.setColor(new Color(100, 150, 255, 180));
+            g2d.setStroke(new BasicStroke(10));
+            g2d.drawArc(400, 420, 300, 250, -30, 100);
+        }
+        
+        if (enemyAnimating) {
+            g2d.setColor(new Color(180, 100, 255, 180));
+            g2d.setStroke(new BasicStroke(10));
+            g2d.drawArc(900, 420, 300, 250, 210, 100);
         }
     }
     

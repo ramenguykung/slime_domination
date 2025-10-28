@@ -12,11 +12,12 @@ public class EnemySlime extends Player {
         // Scale stats based on level
         int baseHealth = 80;
         double baseDamage = 8.0;
+        double baseAttackSpeed = 1.0;
         
         this.maxHealth = baseHealth + (level * 15); // +15 HP per level
         setHealth(this.maxHealth);
         setDamege(baseDamage + (level * 2)); // +2 damage per level
-        setAttackSpeed(1.0);
+        setAttackSpeed(baseAttackSpeed + (level * 0.1)); // +0.1 attack speed per level
     }
     
     public int getMaxHealth() {
