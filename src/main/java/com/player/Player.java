@@ -1,6 +1,6 @@
 package com.player;
 
-public abstract class player {
+public abstract class Player {
     private int health;
     private double Damege, attackSpeed;
     private String name;
@@ -69,7 +69,7 @@ public abstract class player {
         this.health = health;
     }
 
-    public player() {
+    public Player() {
         this.health = 0;
         this.Damege = 0;
         this.attackSpeed = 0;
