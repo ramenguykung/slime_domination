@@ -1,5 +1,6 @@
 package com.main;
 
+import com.player.PlayerSlime;
 import java.awt.*;
 import java.awt.event.*;
 import javax.imageio.ImageIO;
@@ -12,6 +13,7 @@ public class Main extends JFrame {
     
     private JPanel mainPanel;
     private CardLayout cardLayout;
+    private PlayerSlime player;
     
     public Main() {
         setTitle("Slime Domination");
@@ -22,6 +24,9 @@ public class Main extends JFrame {
         
         cardLayout = new CardLayout();
         mainPanel = new JPanel(cardLayout);
+        
+        // Initialize player
+        player = new PlayerSlime();
         
         // Create menu panel
         MenuPanel menuPanel = new MenuPanel(this);
@@ -34,6 +39,29 @@ public class Main extends JFrame {
     
     public void showPanel(String panelName) {
         cardLayout.show(mainPanel, panelName);
+    }
+    
+    public void startGame() {
+        // Remove old game panel if exists
+        Component[] components = mainPanel.getComponents();
+        for (Component comp : components) {
+            if (comp instanceof GamePanel) {
+                mainPanel.remove(comp);
+            }
+        }
+        
+        // Create new game panel
+        GamePanel gamePanel = new GamePanel(this, player);
+        mainPanel.add(gamePanel, "GAME");
+        cardLayout.show(mainPanel, "GAME");
+    }
+    
+    public PlayerSlime getPlayer() {
+        return player;
+    }
+    
+    public void resetPlayer() {
+        player = new PlayerSlime();
     }
     
     public static void main(String[] args) {
@@ -172,13 +200,20 @@ class MenuPanel extends JPanel {
     }
     
     private void startGame() {
-        JOptionPane.showMessageDialog(this, "Starting game...", "Play", JOptionPane.INFORMATION_MESSAGE);
-        // TODO: Implement game panel
+        mainFrame.startGame();
     }
     
     private void showStats() {
-        JOptionPane.showMessageDialog(this, "Stats panel coming soon!", "Stats", JOptionPane.INFORMATION_MESSAGE);
-        // TODO: Implement stats panel
+        PlayerSlime player = mainFrame.getPlayer();
+        JOptionPane.showMessageDialog(this, 
+            "=== Player Stats ===\n" +
+            "HP: " + player.getHealth() + "/" + player.getMaxHealth() + "\n" +
+            "Attack: " + (int)player.getDamege() + "\n" +
+            "Attack Speed: " + player.getAttackSpeed() + "\n" +
+            "Rounds Won: " + player.getRoundsWon() + "\n" +
+            "Skill Points: " + player.getSkillPoints(),
+            "Stats", 
+            JOptionPane.INFORMATION_MESSAGE);
     }
     
     private void showUpgrade() {
