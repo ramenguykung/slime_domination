@@ -189,7 +189,7 @@ public class GamePanel extends JPanel {
         
         if (playerWon) {
             player.incrementRoundsWon();
-            int skillPointsEarned = 5 + (enemy.getLevel() * 2);
+            int skillPointsEarned = 2 + (enemy.getLevel() * 2); // score formula
             player.addSkillPoints(skillPointsEarned);
             battleLog = "Victory! Earned " + skillPointsEarned + " skill points!";
             

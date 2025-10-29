@@ -23,6 +23,14 @@ public class PlayerSlime extends Player {
         this.skillPoints += points;
     }
     
+    public boolean spendSkillPoints(int points) {
+        if (this.skillPoints >= points) {
+            this.skillPoints -= points;
+            return true;
+        }
+        return false;
+    }
+    
     public int getRoundsWon() {
         return roundsWon;
     }
@@ -38,5 +46,19 @@ public class PlayerSlime extends Player {
     public void takeDamage(double damage) {
         int newHealth = (int) Math.max(0, getHealth() - damage);
         setHealth(newHealth);
+    }
+    
+    // Upgrade methods
+    public void upgradeMaxHealth(int amount) {
+        setMaxHealth(getMaxHealth() + amount);
+        setHealth(getHealth() + amount); // Also increase current health
+    }
+    
+    public void upgradeAttack(double amount) {
+        setDamege(getDamege() + amount);
+    }
+    
+    public void upgradeAttackSpeed(double amount) {
+        setAttackSpeed(getAttackSpeed() + amount);
     }
 }
