@@ -1,0 +1,136 @@
+@startuml Slime Domination Class Diagram
+
+' Main package
+package com.main {
+    class Main {
+        - {static} WINDOW_WIDTH : int = 1600
+        - {static} WINDOW_HEIGHT : int = 900
+        - mainPanel : JPanel
+        - cardLayout : CardLayout
+        - player : PlayerSlime
+        
+        + Main()
+        + showPanel(panelName : String) : void
+        + startGame() : void
+        + getPlayer() : PlayerSlime
+        + resetPlayer() : void
+        + {static} main(args : String[]) : void
+    }
+    
+    class MenuPanel {
+        - backgroundImage : BufferedImage
+        - slimeImage : BufferedImage
+        - mainFrame : Main
+        
+        + MenuPanel(mainFrame : Main)
+        - loadImages() : void
+        - createMenuButtons() : void
+        - createStyledButton(text : String, font : Font, bgColor : Color, borderColor : Color) : JButton
+        # paintComponent(g : Graphics) : void
+        - startGame() : void
+        - showStats() : void
+        - showUpgrade() : void
+    }
+    
+    class GamePanel {
+        - mainFrame : Main
+        - player : PlayerSlime
+        - enemy : EnemySlime
+        - backgroundImage : BufferedImage
+        - playerIdleImage : BufferedImage
+        - enemyIdleImage : BufferedImage
+        - battleInProgress : boolean
+        - battleLog : String
+        - animationFrame : int
+        - playerAttackThread : Thread
+        - enemyAttackThread : Thread
+        - battleLock : Object
+        - playerAnimating : boolean {volatile}
+        - enemyAnimating : boolean {volatile}
+        
+        + GamePanel(mainFrame : Main, player : PlayerSlime)
+        - loadImages() : void
+        - createUI() : void
+        - startBattle() : void
+        - startPlayerAttackThread() : void
+        - startEnemyAttackThread() : void
+        - playerAttack() : void
+        - enemyAttack() : void
+        - endBattle(playerWon : boolean) : void
+        - nextRound() : void
+        - retryRound() : void
+        - returnToMenu() : void
+        # paintComponent(g : Graphics) : void
+        - drawHealthBar(g2d : Graphics2D, x : int, y : int, width : int, height : int, currentHP : int, maxHP : int, fullColor : Color, emptyColor : Color) : void
+    }
+}
+
+' Player package
+package com.player {
+    abstract class Player {
+        - health : int
+        - Damege : double
+        - attackSpeed : double
+        - name : String
+        
+        + Player()
+        + getName() : String
+        + setName(name : String) : void
+        + getDamege() : double
+        + setDamege(Damege : double) : void
+        + getAttackSpeed() : double
+        + setAttackSpeed(attackSpeed : double) : void
+        + getHealth() : int
+        + setHealth(health : int) : void
+    }
+    
+    class PlayerSlime {
+        - maxHealth : int
+        - skillPoints : int
+        - roundsWon : int
+        
+        + PlayerSlime()
+        + getMaxHealth() : int
+        + setMaxHealth(maxHealth : int) : void
+        + getSkillPoints() : int
+        + addSkillPoints(points : int) : void
+        + getRoundsWon() : int
+        + incrementRoundsWon() : void
+        + resetForNewRound() : void
+        + isAlive() : boolean
+        + takeDamage(damage : double) : void
+    }
+    
+    class EnemySlime {
+        - maxHealth : int
+        - level : int
+        
+        + EnemySlime(level : int)
+        + getMaxHealth() : int
+        + getLevel() : int
+        + isAlive() : boolean
+        + takeDamage(damage : double) : void
+    }
+}
+
+' Relationships
+Main *-- MenuPanel : contains
+Main *-- GamePanel : contains
+Main o-- PlayerSlime : has
+
+MenuPanel --> Main : uses
+MenuPanel ..> PlayerSlime : accesses
+
+GamePanel --> Main : uses
+GamePanel o-- PlayerSlime : has
+GamePanel o-- EnemySlime : has
+
+PlayerSlime --|> Player : extends
+EnemySlime --|> Player : extends
+
+' Swing framework relationships
+Main --|> JFrame
+MenuPanel --|> JPanel
+GamePanel --|> JPanel
+
+@enduml
