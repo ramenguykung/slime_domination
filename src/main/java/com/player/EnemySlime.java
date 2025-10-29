@@ -13,7 +13,7 @@ public class EnemySlime extends Player {
         double baseDamage = 8.0;
         double baseAttackSpeed = 1.0;
 
-        setMaxHealth(baseHealth + (level * 15)); // +15 HP per level
+        setMaxHealth(baseHealth + (level * 10)); // +10 HP per level
         setHealth(getMaxHealth());
         setDamege(baseDamage + (level * 2)); // +2 damage per level
         setAttackSpeed(baseAttackSpeed + (level * 0.1)); // +0.1 attack speed per level
