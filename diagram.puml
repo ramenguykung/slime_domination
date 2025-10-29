@@ -1,15 +1,24 @@
 @startuml Slime Domination Class Diagram
 
+skinparam classAttributeIconSize 0
+skinparam backgroundColor #FEFEFE
+skinparam class {
+    BackgroundColor #FFFFFF
+    BorderColor #333333
+    ArrowColor #666666
+}
+
 ' Main package
-package com.main {
-    class Main {
-        - {static} WINDOW_WIDTH : int = 1600
-        - {static} WINDOW_HEIGHT : int = 900
+package "com.main" <<Rectangle>> {
+    class Main <<JFrame>> {
+        - {static} {final} WINDOW_WIDTH : int = 1600
+        - {static} {final} WINDOW_HEIGHT : int = 900
         - mainPanel : JPanel
         - cardLayout : CardLayout
         - player : PlayerSlime
-        
+        __constructor__
         + Main()
+        __methods__
         + showPanel(panelName : String) : void
         + startGame() : void
         + getPlayer() : PlayerSlime
@@ -17,12 +26,13 @@ package com.main {
         + {static} main(args : String[]) : void
     }
     
-    class MenuPanel {
+    class MenuPanel <<JPanel>> {
         - backgroundImage : BufferedImage
         - slimeImage : BufferedImage
         - mainFrame : Main
-        
+        __constructor__
         + MenuPanel(mainFrame : Main)
+        __methods__
         - loadImages() : void
         - createMenuButtons() : void
         - createStyledButton(text : String, font : Font, bgColor : Color, borderColor : Color) : JButton
@@ -32,7 +42,7 @@ package com.main {
         - showUpgrade() : void
     }
     
-    class GamePanel {
+    class GamePanel <<JPanel>> {
         - mainFrame : Main
         - player : PlayerSlime
         - enemy : EnemySlime
@@ -44,11 +54,12 @@ package com.main {
         - animationFrame : int
         - playerAttackThread : Thread
         - enemyAttackThread : Thread
-        - battleLock : Object
-        - playerAnimating : boolean {volatile}
-        - enemyAnimating : boolean {volatile}
-        
+        - {final} battleLock : Object
+        - {volatile} playerAnimating : boolean
+        - {volatile} enemyAnimating : boolean
+        __constructor__
         + GamePanel(mainFrame : Main, player : PlayerSlime)
+        __methods__
         - loadImages() : void
         - createUI() : void
         - startBattle() : void
@@ -66,14 +77,16 @@ package com.main {
 }
 
 ' Player package
-package com.player {
+package "com.player" <<Rectangle>> {
     abstract class Player {
         - health : int
+        - maxHealth : int
         - Damege : double
         - attackSpeed : double
         - name : String
-        
+        __constructor__
         + Player()
+        __methods__
         + getName() : String
         + setName(name : String) : void
         + getDamege() : double
@@ -82,55 +95,52 @@ package com.player {
         + setAttackSpeed(attackSpeed : double) : void
         + getHealth() : int
         + setHealth(health : int) : void
+        + getMaxHealth() : int
+        + setMaxHealth(maxHealth : int) : void
+        + isAlive() : boolean
     }
     
     class PlayerSlime {
-        - maxHealth : int
         - skillPoints : int
         - roundsWon : int
-        
+        __constructor__
         + PlayerSlime()
-        + getMaxHealth() : int
-        + setMaxHealth(maxHealth : int) : void
+        __methods__
         + getSkillPoints() : int
         + addSkillPoints(points : int) : void
         + getRoundsWon() : int
         + incrementRoundsWon() : void
         + resetForNewRound() : void
-        + isAlive() : boolean
         + takeDamage(damage : double) : void
     }
     
     class EnemySlime {
-        - maxHealth : int
         - level : int
-        
+        __constructor__
         + EnemySlime(level : int)
-        + getMaxHealth() : int
+        __methods__
         + getLevel() : int
-        + isAlive() : boolean
         + takeDamage(damage : double) : void
     }
 }
 
-' Relationships
-Main *-- MenuPanel : contains
-Main *-- GamePanel : contains
-Main o-- PlayerSlime : has
+' Inheritance Relationships
+PlayerSlime -up-|> Player : <<extends>>
+EnemySlime -up-|> Player : <<extends>>
+Main -up-|> JFrame : <<extends>>
+MenuPanel -up-|> JPanel : <<extends>>
+GamePanel -up-|> JPanel : <<extends>>
 
-MenuPanel --> Main : uses
-MenuPanel ..> PlayerSlime : accesses
+' Composition and Association Relationships
+Main "1" *-down- "1" MenuPanel : contains >
+Main "1" *-down- "0..1" GamePanel : contains >
+Main "1" o-right- "1" PlayerSlime : manages >
 
-GamePanel --> Main : uses
-GamePanel o-- PlayerSlime : has
-GamePanel o-- EnemySlime : has
+MenuPanel -up-> Main : uses
+MenuPanel ..> PlayerSlime : <<accesses>>
 
-PlayerSlime --|> Player : extends
-EnemySlime --|> Player : extends
-
-' Swing framework relationships
-Main --|> JFrame
-MenuPanel --|> JPanel
-GamePanel --|> JPanel
+GamePanel -up-> Main : uses
+GamePanel "1" o-- "1" PlayerSlime : has >
+GamePanel "1" o-- "1" EnemySlime : battles >
 
 @enduml

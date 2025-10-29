@@ -29,3 +29,4 @@ replay_pid*
 target/**/*.png
 target/**/*.jpg
 target/maven-status/
+out/
