@@ -1,24 +1,15 @@
 @startuml Slime Domination Class Diagram
 
-skinparam classAttributeIconSize 0
-skinparam backgroundColor #FEFEFE
-skinparam class {
-    BackgroundColor #FFFFFF
-    BorderColor #333333
-    ArrowColor #666666
-}
-
-' Main package
-package "com.main" <<Rectangle>> {
-    class Main <<JFrame>> {
-        - {static} {final} WINDOW_WIDTH : int = 1600
-        - {static} {final} WINDOW_HEIGHT : int = 900
+' Package definitions
+package com.main {
+    class Main {
+        - {static} WINDOW_WIDTH : int = 1600
+        - {static} WINDOW_HEIGHT : int = 900
         - mainPanel : JPanel
         - cardLayout : CardLayout
         - player : PlayerSlime
-        __constructor__
+        
         + Main()
-        __methods__
         + showPanel(panelName : String) : void
         + startGame() : void
         + getPlayer() : PlayerSlime
@@ -26,13 +17,12 @@ package "com.main" <<Rectangle>> {
         + {static} main(args : String[]) : void
     }
     
-    class MenuPanel <<JPanel>> {
+    class MenuPanel {
         - backgroundImage : BufferedImage
         - slimeImage : BufferedImage
         - mainFrame : Main
-        __constructor__
+        
         + MenuPanel(mainFrame : Main)
-        __methods__
         - loadImages() : void
         - createMenuButtons() : void
         - createStyledButton(text : String, font : Font, bgColor : Color, borderColor : Color) : JButton
@@ -42,7 +32,7 @@ package "com.main" <<Rectangle>> {
         - showUpgrade() : void
     }
     
-    class GamePanel <<JPanel>> {
+    class GamePanel {
         - mainFrame : Main
         - player : PlayerSlime
         - enemy : EnemySlime
@@ -54,12 +44,11 @@ package "com.main" <<Rectangle>> {
         - animationFrame : int
         - playerAttackThread : Thread
         - enemyAttackThread : Thread
-        - {final} battleLock : Object
-        - {volatile} playerAnimating : boolean
-        - {volatile} enemyAnimating : boolean
-        __constructor__
+        - battleLock : Object
+        - playerAnimating : boolean {volatile}
+        - enemyAnimating : boolean {volatile}
+        
         + GamePanel(mainFrame : Main, player : PlayerSlime)
-        __methods__
         - loadImages() : void
         - createUI() : void
         - startBattle() : void
@@ -74,19 +63,39 @@ package "com.main" <<Rectangle>> {
         # paintComponent(g : Graphics) : void
         - drawHealthBar(g2d : Graphics2D, x : int, y : int, width : int, height : int, currentHP : int, maxHP : int, fullColor : Color, emptyColor : Color) : void
     }
+    
+    class UpgradeDialog {
+        - player : PlayerSlime
+        - skillPointsLabel : JLabel
+        - healthStatLabel : JLabel
+        - attackStatLabel : JLabel
+        - attackSpeedStatLabel : JLabel
+        - {static} HEALTH_COST : int = 1
+        - {static} ATTACK_COST : int = 2
+        - {static} ATTACK_SPEED_COST : int = 2
+        - {static} HEALTH_UPGRADE : int = 20
+        - {static} ATTACK_UPGRADE : double = 5.0
+        - {static} ATTACK_SPEED_UPGRADE : double = 0.1
+        
+        + UpgradeDialog(mainFrame : Main, player : PlayerSlime)
+        - setupUI() : void
+        - createUpgradePanel(title : String, upgradeAmount : String, cost : int, color : Color, upgradeAction : Runnable) : JPanel
+        - upgradeHealth() : void
+        - upgradeAttack() : void
+        - upgradeAttackSpeed() : void
+        - updateLabels() : void
+    }
 }
 
-' Player package
-package "com.player" <<Rectangle>> {
+package com.player {
     abstract class Player {
         - health : int
         - maxHealth : int
         - Damege : double
         - attackSpeed : double
         - name : String
-        __constructor__
+        
         + Player()
-        __methods__
         + getName() : String
         + setName(name : String) : void
         + getDamege() : double
@@ -103,44 +112,48 @@ package "com.player" <<Rectangle>> {
     class PlayerSlime {
         - skillPoints : int
         - roundsWon : int
-        __constructor__
+        
         + PlayerSlime()
-        __methods__
         + getSkillPoints() : int
         + addSkillPoints(points : int) : void
+        + spendSkillPoints(points : int) : boolean
         + getRoundsWon() : int
         + incrementRoundsWon() : void
         + resetForNewRound() : void
         + takeDamage(damage : double) : void
+        + upgradeMaxHealth(amount : int) : void
+        + upgradeAttack(amount : double) : void
+        + upgradeAttackSpeed(amount : double) : void
     }
     
     class EnemySlime {
         - level : int
-        __constructor__
+        
         + EnemySlime(level : int)
-        __methods__
         + getLevel() : int
         + takeDamage(damage : double) : void
     }
 }
 
-' Inheritance Relationships
-PlayerSlime -up-|> Player : <<extends>>
-EnemySlime -up-|> Player : <<extends>>
-Main -up-|> JFrame : <<extends>>
-MenuPanel -up-|> JPanel : <<extends>>
-GamePanel -up-|> JPanel : <<extends>>
+' Inheritance relationships
+Player <|-- PlayerSlime
+Player <|-- EnemySlime
 
-' Composition and Association Relationships
-Main "1" *-down- "1" MenuPanel : contains >
-Main "1" *-down- "0..1" GamePanel : contains >
-Main "1" o-right- "1" PlayerSlime : manages >
+' Composition and Aggregation relationships
+Main *-- MenuPanel : contains
+Main *-- GamePanel : contains
+Main *-- PlayerSlime : manages
+GamePanel o-- PlayerSlime : uses
+GamePanel *-- EnemySlime : creates
+MenuPanel o-- Main : references
+GamePanel o-- Main : references
+UpgradeDialog o-- PlayerSlime : modifies
+UpgradeDialog o-- Main : references
 
-MenuPanel -up-> Main : uses
-MenuPanel ..> PlayerSlime : <<accesses>>
-
-GamePanel -up-> Main : uses
-GamePanel "1" o-- "1" PlayerSlime : has >
-GamePanel "1" o-- "1" EnemySlime : battles >
+' Java Swing inheritance (simplified)
+JFrame <|-- Main
+JPanel <|-- MenuPanel
+JPanel <|-- GamePanel
+JDialog <|-- UpgradeDialog
 
 @enduml
