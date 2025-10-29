@@ -1,7 +1,6 @@
 package com.player;
 
 public class PlayerSlime extends Player {
-    private int maxHealth;
     private int skillPoints;
     private int roundsWon;
     
@@ -9,19 +8,11 @@ public class PlayerSlime extends Player {
         super();
         setName("Player Slime");
         setHealth(100);
-        this.maxHealth = 100;
+        setMaxHealth(100);
         setDamege(10);
         setAttackSpeed(1.1);
         this.skillPoints = 0;
         this.roundsWon = 0;
-    }
-    
-    public int getMaxHealth() {
-        return maxHealth;
-    }
-    
-    public void setMaxHealth(int maxHealth) {
-        this.maxHealth = maxHealth;
     }
     
     public int getSkillPoints() {
@@ -41,11 +32,7 @@ public class PlayerSlime extends Player {
     }
     
     public void resetForNewRound() {
-        setHealth(maxHealth);
-    }
-    
-    public boolean isAlive() {
-        return getHealth() > 0;
+        setHealth(getMaxHealth());
     }
     
     public void takeDamage(double damage) {

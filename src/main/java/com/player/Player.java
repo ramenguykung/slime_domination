@@ -2,8 +2,16 @@ package com.player;
 
 public abstract class Player {
     private int health;
+    private int maxHealth;
     private double Damege, attackSpeed;
     private String name;
+    
+    public Player() {
+        this.health = 0;
+        this.Damege = 0;
+        this.attackSpeed = 0;
+        this.name = "";
+    }
 
     /**
      * 
@@ -69,10 +77,27 @@ public abstract class Player {
         this.health = health;
     }
 
-    public Player() {
-        this.health = 0;
-        this.Damege = 0;
-        this.attackSpeed = 0;
-        this.name = "";
+    /**
+     * Gets the maximum health of the entity
+     * @return maxHealth as an int
+     */
+    public int getMaxHealth() {
+        return this.maxHealth;
+    }
+
+    /**
+     * Sets the maximum health of the entity
+     * @param maxHealth the maximum health to set as an int
+     */
+    public void setMaxHealth(int maxHealth) {
+        this.maxHealth = maxHealth;
+    }
+
+    /**
+     * Checks if the entity is alive
+     * @return true if the entity is alive, false if not
+     */
+    public boolean isAlive() {
+        return this.health > 0;
     }
 }
