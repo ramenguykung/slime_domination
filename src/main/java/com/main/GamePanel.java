@@ -17,7 +17,7 @@ public class GamePanel extends JPanel {
     
     private boolean battleInProgress;
     private String battleLog;
-    private int animationFrame;
+    private int animationFrame; // TODO: Implement animation frames
     
     // Thread-related fields
     private Thread playerAttackThread;
@@ -53,7 +53,7 @@ public class GamePanel extends JPanel {
     }
     
     private void createUI() {
-        // Back to menu button
+        // Back button
         JButton backButton = new JButton("MENU");
         backButton.setFont(new Font("Arial", Font.BOLD, 20));
         backButton.setBounds(20, 20, 120, 40);
@@ -73,8 +73,7 @@ public class GamePanel extends JPanel {
     private void startPlayerAttackThread() {
         playerAttackThread = new Thread(() -> {
             try {
-                // Calculate attack interval based on attack speed
-                // Higher attack speed = faster attacks
+                // Attack speed calculation 
                 long attackInterval = (long) (1000 / player.getAttackSpeed());
                 
                 while (battleInProgress && player.isAlive() && enemy.isAlive()) {
@@ -103,8 +102,7 @@ public class GamePanel extends JPanel {
     private void startEnemyAttackThread() {
         enemyAttackThread = new Thread(() -> {
             try {
-                // Calculate attack interval based on attack speed
-                // Higher attack speed = faster attacks
+                // Attack speed calculation
                 long attackInterval = (long) (1000 / enemy.getAttackSpeed());
                 
                 while (battleInProgress && player.isAlive() && enemy.isAlive()) {
@@ -131,6 +129,7 @@ public class GamePanel extends JPanel {
     }
     
     private void playerAttack() {
+        // condition check if battle is still in progress
         if (!battleInProgress || !enemy.isAlive()) return;
         
         double damage = player.getDamege();
@@ -153,6 +152,7 @@ public class GamePanel extends JPanel {
     }
     
     private void enemyAttack() {
+        // condition check if battle is still in progress
         if (!battleInProgress || !player.isAlive()) return;
         
         double damage = enemy.getDamege();
@@ -254,10 +254,10 @@ public class GamePanel extends JPanel {
     }
     
     private void nextRound() {
-        // Reset player HP to full for the new round
+        // Reset player HP on new round
         player.resetForNewRound();
         
-        // Create a stronger enemy for the next round (HP, damage, and speed all increase)
+        // Create a stronger enemy for the next round
         enemy = new EnemySlime(player.getRoundsWon() + 1);
         
         battleLog = "Round " + (player.getRoundsWon() + 1) + " - Fight!";
@@ -286,7 +286,7 @@ public class GamePanel extends JPanel {
             enemyAttackThread.interrupt();
         }
         
-        // Reset player HP when returning to menu (in case battle was interrupted)
+        // Reset player HP when returning to menu
         player.resetForNewRound();
         
         mainFrame.showPanel("MENU");
@@ -295,7 +295,7 @@ public class GamePanel extends JPanel {
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-        Graphics2D g2d = (Graphics2D) g;
+        Graphics2D g2d = (Graphics2D) g; // type case from Graphics -> Graphics2D
         
         // Draw background
         if (backgroundImage != null) {
@@ -362,7 +362,7 @@ public class GamePanel extends JPanel {
         g2d.drawString("Round: " + (player.getRoundsWon() + 1), 800 - fm.stringWidth("Round: " + (player.getRoundsWon() + 1)) / 2, 150);
         g2d.drawString("Skill Points: " + player.getSkillPoints(), 800 - fm.stringWidth("Skill Points: " + player.getSkillPoints()) / 2, 180);
         
-        // Draw attack animation (simple slash effect)
+        // Draw attack animation
         if (playerAnimating) {
             g2d.setColor(new Color(100, 150, 255, 180));
             g2d.setStroke(new BasicStroke(10));
@@ -376,8 +376,7 @@ public class GamePanel extends JPanel {
         }
     }
     
-    private void drawHealthBar(Graphics2D g2d, int x, int y, int width, int height, 
-                                int currentHP, int maxHP, Color fullColor, Color emptyColor) {
+    private void drawHealthBar(Graphics2D g2d, int x, int y, int width, int height, int currentHP, int maxHP, Color fullColor, Color emptyColor) {
         // Background (empty health)
         g2d.setColor(emptyColor);
         g2d.fillRect(x, y, width, height);
