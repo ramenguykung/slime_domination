@@ -1,8 +1,10 @@
 package com.player;
 
 public class EnemySlime extends Player {
+    // NOTE: Encapsulation -> level attribute
     private int level;
     
+    // NOTE: Constructor to initialize EnemySlime with level-based stats
     public EnemySlime(int level) {
         super();
         this.level = level;

@@ -1,11 +1,14 @@
 package com.player;
 
+// NOTE: Abstract -> Player root game entity
 public abstract class Player {
+    // NOTE: Encapsulation -> Player attributes
     private int health;
     private int maxHealth;
     private double Damege, attackSpeed;
     private String name;
     
+    // NOTE: Default constructor
     public Player() {
         this.health = 0;
         this.Damege = 0;

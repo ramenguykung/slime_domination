@@ -65,7 +65,7 @@ public class GamePanel extends JPanel {
         battleInProgress = true;
         battleLog = "Battle Started!";
         
-        // Start separate attack threads for player and enemy
+        // NOTE: Start separate attack threads for player and enemy
         startPlayerAttackThread();
         startEnemyAttackThread();
     }
@@ -73,7 +73,7 @@ public class GamePanel extends JPanel {
     private void startPlayerAttackThread() {
         playerAttackThread = new Thread(() -> {
             try {
-                // Attack speed calculation 
+                // NOTE: Attack speed calculation
                 long attackInterval = (long) (1000 / player.getAttackSpeed());
                 
                 while (battleInProgress && player.isAlive() && enemy.isAlive()) {
